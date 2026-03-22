@@ -26,19 +26,18 @@ stateDiagram-v2
     [*] --> PENDING : submitted
 
     PENDING --> RUNNING : claimed by worker
+    PENDING --> DEAD    : deadline exceeded
 
     RUNNING --> DONE    : worker reports success
-    RUNNING --> FAILED  : worker reports failure
+    RUNNING --> PENDING : worker reports failure\n(retries remaining, backoff)
+    RUNNING --> DEAD    : worker reports failure\n(max attempts exhausted)
     RUNNING --> PENDING : worker died (requeued by reaper)
-
-    FAILED --> PENDING  : retries remaining\n(exponential backoff)
-    FAILED --> DEAD     : max attempts exhausted
 
     DONE --> [*]
     DEAD --> [*]
 ```
 
-Tasks carry a **priority** (higher = claimed first) and a configurable **max attempts** before being permanently dead-lettered. Failed tasks are retried with exponential backoff capped at 5 minutes.
+Tasks carry a **priority** (higher = claimed first) and a configurable **max attempts** (default 3) before being permanently dead-lettered. When a worker reports failure, the task goes back to PENDING with exponential backoff (`2^attempts × baseDelay`, capped at 5 minutes) if retries remain, or straight to DEAD if attempts are exhausted. Tasks may also carry an optional **deadline** — if still PENDING after that instant, the deadline reaper moves them to DEAD.
 
 ---
 
@@ -86,12 +85,18 @@ sequenceDiagram
             TM ->> DB : UPDATE status = DONE
         else failure
             W  ->> TM : POST /tasks/v1/{id}/fail
-            TM ->> DB : UPDATE status = FAILED / DEAD\nset next_attempt_at (backoff)
+            TM ->> DB : UPDATE status = PENDING (backoff) / DEAD
         end
     end
 ```
 
 Claiming is atomic (`FOR UPDATE SKIP LOCKED`) — two workers polling simultaneously will never receive the same task.
+
+---
+
+## Tags & capabilities
+
+Tasks can carry **tags** (up to 16 strings) representing required capabilities. Workers register with their own set of tags advertising what they can handle. During a claim, Taskmaster only matches a task to a worker when the task's tags are a **subset** of the worker's tags (PostgreSQL `<@` array containment). Untagged tasks match any worker.
 
 ---
 
@@ -101,6 +106,7 @@ Claiming is atomic (`FOR UPDATE SKIP LOCKED`) — two workers polling simultaneo
 |---|---|---|
 | **Heartbeat Reaper** | 15 s | Marks silent workers STALE → DEAD; requeues their tasks |
 | **Deadline Reaper** | 30 s | Moves PENDING tasks past their deadline to DEAD |
+| **Retention Reaper** | 10 min | Deletes terminal tasks (DONE/DEAD) and dead workers older than the configured TTL; runs in bounded batches |
 
 ---
 
@@ -121,6 +127,8 @@ Claiming is atomic (`FOR UPDATE SKIP LOCKED`) — two workers polling simultaneo
 
 All error responses follow [RFC 9457 Problem Details](https://www.rfc-editor.org/rfc/rfc9457).
 
+All requests may carry an `X-Correlation-Id` header; Taskmaster propagates it through virtual-thread-scoped context via `ScopedValue` for end-to-end tracing.
+
 ---
 
 ## Configuration
@@ -130,6 +138,10 @@ All error responses follow [RFC 9457 Problem Details](https://www.rfc-editor.org
 | `taskmaster.heartbeat.stale-threshold-seconds` | `30` | Seconds of silence before a worker is marked STALE |
 | `taskmaster.heartbeat.dead-threshold-seconds` | `120` | Seconds of silence before a worker is marked DEAD |
 | `taskmaster.reaper.interval-ms` | `15000` | How often the heartbeat reaper runs |
+| `taskmaster.retry.base-delay-seconds` | `1` | Base multiplier for exponential backoff (`2^attempts × base`) |
+| `taskmaster.retention.ttl` | `7d` | How long terminal tasks and dead workers are kept; zero disables cleanup |
+| `taskmaster.retention.interval-ms` | `600000` | How often the retention reaper runs |
+| `taskmaster.retention.batch-size` | `500` | Max rows deleted per batch within a single retention cycle |
 
 ---
 
@@ -144,11 +156,13 @@ Taskmaster exposes Prometheus metrics via `/actuator/prometheus`. All task metri
 | `tasks.submitted` | `queue` | Tasks submitted |
 | `tasks.claimed` | `queue` | Tasks claimed by workers |
 | `tasks.completed` | `queue` | Tasks completed successfully |
-| `tasks.failed` | `queue` | Task failures (before retry decision) |
+| `tasks.failed` | `queue` | Fail calls received (before retry/dead-letter decision) |
 | `tasks.dead_lettered` | `queue`, `reason` | Tasks moved to terminal DEAD state (`exhausted`, `worker_dead`, `deadline`) |
 | `tasks.requeued` | `reason` | Tasks returned to PENDING for retry |
+| `tasks.cleaned` | — | Terminal tasks removed by retention reaper |
 | `workers.registered` | `queue` | Worker registrations |
 | `workers.died` | — | Workers marked DEAD |
+| `workers.cleaned` | — | Dead workers removed by retention reaper |
 
 ### Timers
 
@@ -172,3 +186,13 @@ docker compose up --build
 ```
 
 A pre-provisioned Grafana dashboard ("Taskmaster Overview") is available on startup with panels for task throughput, dead letters, worker events, and latency breakdowns.
+
+---
+
+## Implementation notes
+
+- **Java 25** with preview features enabled (sealed interfaces for `TaskStatus`)
+- **Virtual threads** — all Tomcat request handlers and scheduled reapers run on virtual threads
+- **Spring Data JDBC** (no JPA) — lightweight, explicit SQL with no lazy-loading surprises
+- **Flyway** for schema migrations
+- **Atomic claiming** — a single `SELECT … FOR UPDATE SKIP LOCKED` + `UPDATE` query ensures two workers polling simultaneously never receive the same task

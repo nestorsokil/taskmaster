@@ -21,3 +21,4 @@
 - If a task involved a repeatable multi-step workflow (3+ steps, likely to recur), suggest turning it into a Skill
 - If a change introduces new patterns not yet documented, suggest updating CLAUDE.md or the relevant spec
 - If a change will break existing API or dependants, highlight this in CAPS in the plan and output
+- If a change is affecting business logic and not just bug/edge case fix -- check if README requires
