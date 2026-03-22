@@ -1,0 +1,37 @@
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics,prometheus
+
+spring:
+  threads:
+    virtual:
+      enabled: true
+  mvc:
+    problemdetails:
+      enabled: true
+  datasource:
+    url: jdbc:postgresql://localhost:5432/taskmaster?stringtype=unspecified
+    username: postgres
+    password: postgres
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+  task:
+    scheduling:
+      pool:
+        size: 2
+
+taskmaster:
+  heartbeat:
+    stale-threshold-seconds: 5
+    dead-threshold-seconds: 10
+  reaper:
+    interval-ms: 5000
+  retry:
+    base-delay-seconds: 1
+  retention:
+    ttl: 3s
+    interval-ms: 2000
+    batch-size: 500

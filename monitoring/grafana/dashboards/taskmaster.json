@@ -1,0 +1,136 @@
+{
+  "uid": "taskmaster-overview",
+  "title": "Taskmaster Overview",
+  "tags": ["taskmaster"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "refresh": "10s",
+  "time": { "from": "now-30m", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "queue",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "definition": "label_values(tasks_submitted_total, queue)",
+        "query": "label_values(tasks_submitted_total, queue)",
+        "includeAll": true,
+        "multi": true,
+        "current": { "selected": true, "text": "All", "value": "$__all" },
+        "refresh": 2
+      }
+    ]
+  },
+  "panels": [
+    {
+      "title": "Task Rate",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 0, "w": 16, "h": 8 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "custom": { "drawStyle": "line", "fillOpacity": 10, "spanNulls": true }
+        }
+      },
+      "targets": [
+        { "expr": "sum(rate(tasks_submitted_total{queue=~\"$queue\"}[5m]))", "legendFormat": "submitted" },
+        { "expr": "sum(rate(tasks_claimed_total{queue=~\"$queue\"}[5m]))", "legendFormat": "claimed" },
+        { "expr": "sum(rate(tasks_completed_total{queue=~\"$queue\"}[5m]))", "legendFormat": "completed" },
+        { "expr": "sum(rate(tasks_failed_total{queue=~\"$queue\"}[5m]))", "legendFormat": "failed" }
+      ]
+    },
+    {
+      "title": "Task Totals",
+      "type": "stat",
+      "gridPos": { "x": 16, "y": 0, "w": 8, "h": 8 },
+      "options": { "graphMode": "none", "textMode": "value_and_name" },
+      "fieldConfig": {
+        "defaults": { "unit": "short" }
+      },
+      "targets": [
+        { "expr": "sum(tasks_submitted_total{queue=~\"$queue\"})", "legendFormat": "Submitted" },
+        { "expr": "sum(tasks_completed_total{queue=~\"$queue\"})", "legendFormat": "Completed" },
+        { "expr": "sum(tasks_failed_total{queue=~\"$queue\"})", "legendFormat": "Failed" },
+        { "expr": "sum(tasks_dead_lettered_total{queue=~\"$queue\"})", "legendFormat": "Dead-lettered" }
+      ]
+    },
+    {
+      "title": "Dead Letters & Requeues",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "custom": { "drawStyle": "line", "fillOpacity": 10, "spanNulls": true }
+        }
+      },
+      "targets": [
+        { "expr": "sum by (reason) (rate(tasks_dead_lettered_total{queue=~\"$queue\"}[5m]))", "legendFormat": "dead-lettered ({{reason}})" },
+        { "expr": "sum by (reason) (rate(tasks_requeued_total[5m]))", "legendFormat": "requeued ({{reason}})" }
+      ]
+    },
+    {
+      "title": "Worker Events",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 8, "w": 12, "h": 8 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "custom": { "drawStyle": "line", "fillOpacity": 10, "spanNulls": true }
+        }
+      },
+      "targets": [
+        { "expr": "sum(rate(workers_registered_total{queue=~\"$queue\"}[5m]))", "legendFormat": "registered" },
+        { "expr": "sum(rate(workers_died_total[5m]))", "legendFormat": "died" }
+      ]
+    },
+    {
+      "title": "Queue Wait Time",
+      "description": "Time from task submission to claim",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 16, "w": 8, "h": 8 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": { "drawStyle": "line", "fillOpacity": 10, "spanNulls": true }
+        }
+      },
+      "targets": [
+        { "expr": "sum by (queue) (rate(tasks_queue_wait_seconds_sum{queue=~\"$queue\"}[5m])) / sum by (queue) (rate(tasks_queue_wait_seconds_count{queue=~\"$queue\"}[5m]))", "legendFormat": "avg ({{queue}})" },
+        { "expr": "max by (queue) (tasks_queue_wait_seconds_max{queue=~\"$queue\"})", "legendFormat": "max ({{queue}})" }
+      ]
+    },
+    {
+      "title": "Execution Duration",
+      "description": "Time from claim to completion/failure",
+      "type": "timeseries",
+      "gridPos": { "x": 8, "y": 16, "w": 8, "h": 8 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": { "drawStyle": "line", "fillOpacity": 10, "spanNulls": true }
+        }
+      },
+      "targets": [
+        { "expr": "sum by (queue) (rate(tasks_execution_duration_seconds_sum{queue=~\"$queue\"}[5m])) / sum by (queue) (rate(tasks_execution_duration_seconds_count{queue=~\"$queue\"}[5m]))", "legendFormat": "avg ({{queue}})" },
+        { "expr": "max by (queue) (tasks_execution_duration_seconds_max{queue=~\"$queue\"})", "legendFormat": "max ({{queue}})" }
+      ]
+    },
+    {
+      "title": "End-to-End Duration",
+      "description": "Total time from submission to terminal state (DONE/DEAD), including retries",
+      "type": "timeseries",
+      "gridPos": { "x": 16, "y": 16, "w": 8, "h": 8 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": { "drawStyle": "line", "fillOpacity": 10, "spanNulls": true }
+        }
+      },
+      "targets": [
+        { "expr": "sum by (queue) (rate(tasks_end_to_end_duration_seconds_sum{queue=~\"$queue\"}[5m])) / sum by (queue) (rate(tasks_end_to_end_duration_seconds_count{queue=~\"$queue\"}[5m]))", "legendFormat": "avg ({{queue}})" },
+        { "expr": "max by (queue) (tasks_end_to_end_duration_seconds_max{queue=~\"$queue\"})", "legendFormat": "max ({{queue}})" }
+      ]
+    }
+  ]
+}
