@@ -37,7 +37,8 @@ public class TaskController {
                 request.priority(),
                 request.maxAttempts(),
                 request.deadline(),
-                new Tags(request.tags())
+                new Tags(request.tags()),
+                request.callbackUrl()
         );
         return new SubmitTaskResponse(task.id(), task.status());
     }

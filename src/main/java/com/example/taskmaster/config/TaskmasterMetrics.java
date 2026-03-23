@@ -80,6 +80,14 @@ public class TaskmasterMetrics {
         }
     }
 
+    public void webhookDelivered(String queue, String status) {
+        registry.counter("webhooks.delivered", "queue", queue, "status", status).increment();
+    }
+
+    public void webhookDeliveryFailed(String queue) {
+        registry.counter("webhooks.delivery_failed", "queue", queue).increment();
+    }
+
     /** Records claimedAt - createdAt for a task, showing if workers are keeping up. */
     public void recordQueueWaitTime(String queue, Duration duration) {
         timer("tasks.queue.wait", queue).record(duration);

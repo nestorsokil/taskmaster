@@ -26,6 +26,7 @@ public record TaskResponse(
         String lastError,
         int attempts,
         List<String> tags,
+        String callbackUrl,
         Instant createdAt,
         Instant finishedAt
 ) {
@@ -38,6 +39,7 @@ public record TaskResponse(
                 task.lastError(),
                 task.attempts(),
                 task.tags().values(),
+                task.callbackUrl(),
                 task.createdAt(),
                 task.finishedAt()
         );

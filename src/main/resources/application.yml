@@ -35,3 +35,6 @@ taskmaster:
     ttl: 3s
     interval-ms: 2000
     batch-size: 500
+  webhook:
+    hmac-secret: "test-webhook-secret"
+    http-timeout-seconds: 10

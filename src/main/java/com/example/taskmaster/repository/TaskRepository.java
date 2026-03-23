@@ -108,8 +108,8 @@ public interface TaskRepository extends ListCrudRepository<Task, UUID> {
          * Requeues all RUNNING tasks owned by dead workers.
          * If a task has exhausted its attempts it is moved to DEAD instead of PENDING.
          * Called by the HeartbeatReaper after marking workers DEAD.
+         * Returns affected tasks so callers can compute metrics and fire webhooks.
          */
-        @Modifying
         @Query("""
                         UPDATE tasks
                            SET status          = CASE
@@ -120,8 +120,9 @@ public interface TaskRepository extends ListCrudRepository<Task, UUID> {
                                claimed_at      = NULL
                          WHERE status    = 'RUNNING'
                            AND worker_id IN (:workerIds)
+                        RETURNING *
                         """)
-        int requeueOrMarkDeadFromDeadWorkers(@Param("workerIds") List<String> workerIds);
+        List<Task> requeueOrMarkDeadFromDeadWorkers(@Param("workerIds") List<String> workerIds);
 
         /**
          * Returns the number of tasks that will be dead-lettered (attempts exhausted)
@@ -166,10 +167,9 @@ public interface TaskRepository extends ListCrudRepository<Task, UUID> {
 
         /**
          * Dead-letters all PENDING tasks whose deadline has passed.
-         * Returns the number of tasks moved to DEAD.
+         * Returns the affected tasks so callers can fire webhooks for those with callback URLs.
          * No-op when no tasks have an expired deadline.
          */
-        @Modifying
         @Query("""
                         UPDATE tasks
                            SET status      = 'DEAD',
@@ -177,8 +177,9 @@ public interface TaskRepository extends ListCrudRepository<Task, UUID> {
                          WHERE status   = 'PENDING'
                            AND deadline IS NOT NULL
                            AND deadline  < now()
+                        RETURNING *
                         """)
-        int deadlineExpired();
+        List<Task> deadlineExpired();
 
         /**
          * Deletes a batch of terminal tasks (DONE or DEAD) whose {@code finished_at}

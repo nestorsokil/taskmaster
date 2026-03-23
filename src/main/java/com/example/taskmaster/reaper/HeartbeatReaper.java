@@ -4,6 +4,7 @@ import com.example.taskmaster.config.TaskmasterMetrics;
 import com.example.taskmaster.config.TaskmasterProperties;
 import com.example.taskmaster.repository.TaskRepository;
 import com.example.taskmaster.repository.WorkerRepository;
+import com.example.taskmaster.service.WebhookService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -32,6 +33,7 @@ public class HeartbeatReaper {
     private final TaskRepository taskRepository;
     private final TaskmasterProperties properties;
     private final TaskmasterMetrics metrics;
+    private final WebhookService webhookService;
 
     @Scheduled(fixedDelayString = "${taskmaster.reaper.interval-ms}")
     @Transactional
@@ -54,14 +56,18 @@ public class HeartbeatReaper {
         metrics.workersDied(deadWorkerIds.size());
 
         // Step 3: requeue RUNNING tasks owned by dead workers (or dead-letter if exhausted)
-        int requeueCount = taskRepository.countRequeuable(deadWorkerIds);
-        int deadLetterCount = taskRepository.countDeadLetterable(deadWorkerIds);
-        taskRepository.requeueOrMarkDeadFromDeadWorkers(deadWorkerIds);
+        var affected = taskRepository.requeueOrMarkDeadFromDeadWorkers(deadWorkerIds);
 
+        int requeueCount = (int) affected.stream().filter(t -> "PENDING".equals(t.status())).count();
+        int deadLetterCount = (int) affected.stream().filter(t -> "DEAD".equals(t.status())).count();
         metrics.tasksRequeued("worker_dead", requeueCount);
         metrics.taskDeadLetteredBatch("worker_dead", deadLetterCount);
         if (requeueCount > 0) {
             log.info("Requeued {} task(s) from dead workers", requeueCount);
         }
+
+        affected.stream()
+                .filter(t -> "DEAD".equals(t.status()))
+                .forEach(webhookService::deliverIfConfigured);
     }
 }

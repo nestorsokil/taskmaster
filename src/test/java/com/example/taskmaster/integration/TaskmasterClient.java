@@ -62,7 +62,11 @@ public final class TaskmasterClient {
     }
 
     public SubmitTaskResponse submitTask(String queue, Object payload, int priority, Integer maxAttempts, Instant deadline, List<String> tags) {
-        var body = new SubmitTaskRequest(queue, MAPPER.valueToTree(payload), priority, maxAttempts, deadline, tags);
+        return submitTask(queue, payload, priority, maxAttempts, deadline, tags, null);
+    }
+
+    public SubmitTaskResponse submitTask(String queue, Object payload, int priority, Integer maxAttempts, Instant deadline, List<String> tags, String callbackUrl) {
+        var body = new SubmitTaskRequest(queue, MAPPER.valueToTree(payload), priority, maxAttempts, deadline, tags, callbackUrl);
         return request()
                 .body(body)
                 .when().post("/tasks/v1")

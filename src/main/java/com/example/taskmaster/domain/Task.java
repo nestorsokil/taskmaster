@@ -15,7 +15,7 @@ import java.util.UUID;
  * All fields map directly to database columns by name (snake_case ↔ camelCase
  * via {@link Column} where needed).
  */
-@Builder
+@Builder(toBuilder = true)
 @Table("tasks")
 public record Task(
 
@@ -130,7 +130,14 @@ public record Task(
          * if its capability set is a superset of these tags. Empty means any worker
          * on the queue can claim it.
          */
-        Tags tags
+        Tags tags,
+
+        /**
+         * Optional callback URL for webhook delivery. When set, Taskmaster will POST
+         * task results to this URL when the task reaches a terminal state (DONE or DEAD).
+         */
+        @Column("callback_url")
+        String callbackUrl
 
 ) {
     public Task {

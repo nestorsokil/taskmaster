@@ -25,7 +25,8 @@ public record SubmitTaskRequest(
         int priority,
         @Min(1) Integer maxAttempts,
         Instant deadline,
-        @Size(max = 16) List<@Size(max = 64) String> tags
+        @Size(max = 16) List<@Size(max = 64) String> tags,
+        String callbackUrl
 ) {
     public SubmitTaskRequest {
         if (maxAttempts == null) maxAttempts = 3;

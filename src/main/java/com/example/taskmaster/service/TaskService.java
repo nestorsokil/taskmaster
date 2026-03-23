@@ -27,11 +27,12 @@ public class TaskService {
     private final TaskRepository taskRepository;
     private final TaskmasterMetrics metrics;
     private final TaskmasterProperties properties;
+    private final WebhookService webhookService;
 
     /**
      * Persists a new task in PENDING state. The database supplies the UUID and timestamps.
      */
-    public Task submit(String queueName, String payload, int priority, int maxAttempts, Instant deadline, Tags tags) {
+    public Task submit(String queueName, String payload, int priority, int maxAttempts, Instant deadline, Tags tags, String callbackUrl) {
         @SuppressWarnings("null")
         var saved = taskRepository.save(Task.builder()
                 .queueName(queueName)
@@ -42,6 +43,7 @@ public class TaskService {
                 .createdAt(Instant.now())
                 .deadline(deadline)
                 .tags(tags)
+                .callbackUrl(callbackUrl)
                 .build());
         metrics.taskSubmitted(queueName);
         log.info("Task submitted: id={}, queue={}, priority={}, tags={}", saved.id(), queueName, priority, tags.values());
@@ -72,6 +74,7 @@ public class TaskService {
         metrics.recordExecutionDuration(task.queueName(), Duration.between(task.claimedAt(), now));
         metrics.recordEndToEndDuration(task.queueName(), Duration.between(task.createdAt(), now));
         log.info("Task completed: id={}, queue={}, worker={}", taskId, task.queueName(), workerId);
+        webhookService.deliverIfConfigured(task.toBuilder().status("DONE").result(result).build());
     }
 
     /**
@@ -93,6 +96,7 @@ public class TaskService {
             metrics.taskDeadLettered(task.queueName(), "exhausted");
             metrics.recordEndToEndDuration(task.queueName(), Duration.between(task.createdAt(), task.finishedAt()));
             log.info("Task dead-lettered: id={}, queue={}, attempts={}", taskId, task.queueName(), task.attempts());
+            webhookService.deliverIfConfigured(task);
         } else {
             log.info("Task requeued for retry: id={}, queue={}, attempt={}/{}", taskId, task.queueName(), task.attempts(), task.maxAttempts());
         }

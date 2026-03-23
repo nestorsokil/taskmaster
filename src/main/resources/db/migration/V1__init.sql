@@ -24,6 +24,7 @@ CREATE TABLE tasks (
   result           TEXT,
   last_error       TEXT,
   deadline         TIMESTAMPTZ,
+  callback_url     TEXT,
   tags             TEXT[]      NOT NULL DEFAULT '{}'
 );
 
