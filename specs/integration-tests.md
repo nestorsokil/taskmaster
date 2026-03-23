@@ -38,7 +38,7 @@ Alternatively, each test class uses unique queue names (e.g., prefixed with the 
 
 ### Build Integration
 
-Integration tests live in `src/test/java` under a dedicated package (e.g., `com.example.taskmaster.integration`). They are tagged with a JUnit 5 tag (e.g., `@Tag("integration")`) so they can be included or excluded from Maven runs. The Maven Failsafe plugin runs them in the `verify` phase, separate from unit tests.
+Integration tests live in `src/test/java` under a dedicated package (e.g., `io.github.nestorsokil.taskmaster.integration`). They are tagged with a JUnit 5 tag (e.g., `@Tag("integration")`) so they can be included or excluded from Maven runs. The Maven Failsafe plugin runs them in the `verify` phase, separate from unit tests.
 
 ## Test Coverage
 
