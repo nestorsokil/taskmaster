@@ -38,6 +38,7 @@ public class TaskController {
                 request.maxAttempts(),
                 request.deadline(),
                 new Tags(request.tags()),
+                request.complexity(),
                 request.callbackUrl()
         );
         return new SubmitTaskResponse(task.id(), task.status());
@@ -75,7 +76,7 @@ public class TaskController {
         var tasks = new ArrayList<ClaimTasksResponse.ClaimedTask>();
         for (var task : claimed) {
             var payload = objectMapper.readTree(task.payload());
-            tasks.add(new ClaimTasksResponse.ClaimedTask(task.id(), payload, task.attempts()));
+            tasks.add(new ClaimTasksResponse.ClaimedTask(task.id(), payload, task.attempts(), task.complexity()));
         }
         return new ClaimTasksResponse(tasks);
     }

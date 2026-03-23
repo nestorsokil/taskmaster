@@ -13,13 +13,39 @@ import java.util.UUID;
 public interface TaskRepository extends ListCrudRepository<Task, UUID> {
 
   /**
-   * Atomically claims up to {@code maxTasks} PENDING tasks for a worker using
-   * FOR UPDATE SKIP LOCKED — concurrent claim requests never block each other
-   * and never double-claim the same task.
+   * Fetches up to {@code limit} PENDING, eligible tasks for a worker and locks them
+   * with FOR UPDATE SKIP LOCKED so concurrent callers skip already-locked rows.
    *
-   * <p>
-   * The UPDATE increments {@code attempts} in the same statement so the
-   * worker always sees the correct attempt count without a separate read.
+   * <p>The caller is responsible for applying the greedy complexity budget check and
+   * calling {@link #claimByIds} within the same transaction to atomically claim the
+   * selected subset. Rows that are locked but not claimed are released at transaction end.
+   */
+  @Query("""
+      SELECT * FROM tasks
+       WHERE queue_name = :queueName
+         AND status     = 'PENDING'
+         AND (next_attempt_at IS NULL OR next_attempt_at <= now())
+         AND tags <@ (SELECT tags FROM workers WHERE id = :workerId)
+       ORDER BY priority DESC, created_at ASC
+       LIMIT :limit
+       FOR UPDATE SKIP LOCKED
+      """)
+  List<Task> fetchClaimCandidates(@Param("workerId") String workerId,
+      @Param("queueName") String queueName,
+      @Param("limit") int limit);
+
+  /**
+   * Returns the total complexity load currently held by a worker
+   * (sum of {@code complexity} across all RUNNING tasks owned by that worker).
+   */
+  @Query("SELECT COALESCE(SUM(complexity), 0) FROM tasks WHERE worker_id = :workerId AND status = 'RUNNING'")
+  int getWorkerLoad(@Param("workerId") String workerId);
+
+  /**
+   * Atomically claims a specific set of tasks by ID — transitions them to RUNNING,
+   * records the worker, stamps {@code claimed_at}, and increments {@code attempts}.
+   * Must be called within the same transaction as {@link #fetchClaimCandidates} so
+   * the FOR UPDATE locks are still held.
    */
   @Query("""
       UPDATE tasks
@@ -27,21 +53,11 @@ public interface TaskRepository extends ListCrudRepository<Task, UUID> {
              worker_id  = :workerId,
              claimed_at = now(),
              attempts   = attempts + 1
-       WHERE id IN (
-             SELECT id FROM tasks
-              WHERE queue_name = :queueName
-                AND status     = 'PENDING'
-                AND (next_attempt_at IS NULL OR next_attempt_at <= now())
-                AND tags <@ (SELECT tags FROM workers WHERE id = :workerId)
-              ORDER BY priority DESC, created_at ASC
-              LIMIT :maxTasks
-              FOR UPDATE SKIP LOCKED
-       )
+       WHERE id IN (:taskIds)
       RETURNING *
       """)
-  List<Task> claimTasks(@Param("workerId") String workerId,
-      @Param("queueName") String queueName,
-      @Param("maxTasks") int maxTasks);
+  List<Task> claimByIds(@Param("workerId") String workerId,
+      @Param("taskIds") List<UUID> taskIds);
 
   /**
    * Marks a task DONE, records the worker-supplied result, and stamps

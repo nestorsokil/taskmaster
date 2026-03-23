@@ -38,15 +38,15 @@ public interface WorkerRepository extends ListCrudRepository<Worker, String> {
          * existing queue_name and max_concurrency so a claim never clobbers
          * values set by an explicit /register call.
          */
-        @Modifying
         @Query("""
                         INSERT INTO workers (id, queue_name, max_concurrency, tags, registered_at, last_heartbeat, status)
                         VALUES (:id, :queueName, :maxConcurrency, ARRAY[]::TEXT[], now(), now(), 'ACTIVE')
                         ON CONFLICT (id) DO UPDATE
                            SET last_heartbeat = now(),
                                status         = 'ACTIVE'
+                        RETURNING *
                         """)
-        void ensureExists(@Param("id") String id,
+        Worker ensureExists(@Param("id") String id,
                         @Param("queueName") String queueName,
                         @Param("maxConcurrency") int maxConcurrency);
 
@@ -64,6 +64,13 @@ public interface WorkerRepository extends ListCrudRepository<Worker, String> {
          */
         @Query("SELECT * FROM workers WHERE status = 'ACTIVE'")
         List<Worker> findActive();
+
+        /**
+         * Returns all ACTIVE workers on a specific queue. Used at task submission time
+         * to warn when no registered worker has sufficient capacity for the task's complexity.
+         */
+        @Query("SELECT * FROM workers WHERE status = 'ACTIVE' AND queue_name = :queueName")
+        List<Worker> findActiveOnQueue(@Param("queueName") String queueName);
 
         /**
          * Deletes a batch of DEAD workers whose {@code last_heartbeat} is older than

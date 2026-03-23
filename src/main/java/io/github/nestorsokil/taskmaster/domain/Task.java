@@ -133,6 +133,14 @@ public record Task(
         Tags tags,
 
         /**
+         * Relative cost of executing this task, supplied by the producer (default 1).
+         * Workers accumulate complexity of their RUNNING tasks; a new task is only
+         * claimed when it fits within the worker's remaining capacity budget
+         * ({@code maxConcurrency - currentLoad}).
+         */
+        int complexity,
+
+        /**
          * Optional callback URL for webhook delivery. When set, Taskmaster will POST
          * task results to this URL when the task reaches a terminal state (DONE or DEAD).
          */
@@ -142,5 +150,6 @@ public record Task(
 ) {
     public Task {
         if (tags == null) tags = Tags.EMPTY;
+        if (complexity <= 0) complexity = 1;
     }
 }

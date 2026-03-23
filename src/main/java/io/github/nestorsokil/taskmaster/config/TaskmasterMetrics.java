@@ -6,6 +6,8 @@ import io.micrometer.core.instrument.Timer;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Centralised Prometheus counters for task and worker lifecycle events.
@@ -19,9 +21,27 @@ import java.time.Duration;
 public class TaskmasterMetrics {
 
     private final MeterRegistry registry;
+    private final ConcurrentHashMap<String, AtomicInteger> workerLoadGauges = new ConcurrentHashMap<>();
 
     public TaskmasterMetrics(MeterRegistry registry) {
         this.registry = registry;
+    }
+
+    /**
+     * Updates the {@code workers.current_load} gauge for a worker, registering it on
+     * first call. The gauge reflects the sum of complexity of all RUNNING tasks owned
+     * by that worker. Called after each claim, complete, and fail operation.
+     */
+    public void setWorkerLoad(String workerId, String queue, int load) {
+        var key = workerId + "|" + queue;
+        var gauge = workerLoadGauges.computeIfAbsent(key, k -> {
+            var value = new AtomicInteger(0);
+            registry.gauge("workers.current_load",
+                    io.micrometer.core.instrument.Tags.of("worker_id", workerId, "queue", queue),
+                    value, AtomicInteger::get);
+            return value;
+        });
+        gauge.set(load);
     }
 
     public void taskSubmitted(String queue) {

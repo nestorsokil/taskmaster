@@ -18,6 +18,8 @@ import java.util.List;
  * @param maxAttempts max execution attempts before the task is marked DEAD; omit to use default (3)
  * @param deadline    optional hard deadline; if the task is still PENDING after this
  *                    instant the DeadlineReaper will move it to DEAD; null means no deadline
+ * @param complexity  relative execution cost; workers only claim this task when their remaining
+ *                    capacity budget ({@code maxConcurrency - currentLoad}) is sufficient; defaults to 1
  */
 public record SubmitTaskRequest(
         @NotBlank String queueName,
@@ -26,10 +28,12 @@ public record SubmitTaskRequest(
         @Min(1) Integer maxAttempts,
         Instant deadline,
         @Size(max = 16) List<@Size(max = 64) String> tags,
+        @Min(1) Integer complexity,
         String callbackUrl
 ) {
     public SubmitTaskRequest {
         if (maxAttempts == null) maxAttempts = 3;
         if (tags == null) tags = List.of();
+        if (complexity == null) complexity = 1;
     }
 }

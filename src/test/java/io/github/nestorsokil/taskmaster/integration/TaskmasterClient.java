@@ -46,27 +46,31 @@ public final class TaskmasterClient {
     // ---- task operations ----
 
     public SubmitTaskResponse submitTask(String queue, Object payload) {
-        return submitTask(queue, payload, 0, null, null, null);
+        return submitTask(queue, payload, 0, null, null, null, null, null);
     }
 
     public SubmitTaskResponse submitTask(String queue, Object payload, int priority) {
-        return submitTask(queue, payload, priority, null, null, null);
+        return submitTask(queue, payload, priority, null, null, null, null, null);
     }
 
     public SubmitTaskResponse submitTask(String queue, Object payload, int priority, Integer maxAttempts) {
-        return submitTask(queue, payload, priority, maxAttempts, null, null);
+        return submitTask(queue, payload, priority, maxAttempts, null, null, null, null);
     }
 
     public SubmitTaskResponse submitTask(String queue, Object payload, int priority, Integer maxAttempts, Instant deadline) {
-        return submitTask(queue, payload, priority, maxAttempts, deadline, null);
+        return submitTask(queue, payload, priority, maxAttempts, deadline, null, null, null);
     }
 
     public SubmitTaskResponse submitTask(String queue, Object payload, int priority, Integer maxAttempts, Instant deadline, List<String> tags) {
-        return submitTask(queue, payload, priority, maxAttempts, deadline, tags, null);
+        return submitTask(queue, payload, priority, maxAttempts, deadline, tags, null, null);
     }
 
     public SubmitTaskResponse submitTask(String queue, Object payload, int priority, Integer maxAttempts, Instant deadline, List<String> tags, String callbackUrl) {
-        var body = new SubmitTaskRequest(queue, MAPPER.valueToTree(payload), priority, maxAttempts, deadline, tags, callbackUrl);
+        return submitTask(queue, payload, priority, maxAttempts, deadline, tags, null, callbackUrl);
+    }
+
+    public SubmitTaskResponse submitTask(String queue, Object payload, int priority, Integer maxAttempts, Instant deadline, List<String> tags, Integer complexity, String callbackUrl) {
+        var body = new SubmitTaskRequest(queue, MAPPER.valueToTree(payload), priority, maxAttempts, deadline, tags, complexity, callbackUrl);
         return request()
                 .body(body)
                 .when().post("/tasks/v1")
@@ -75,7 +79,11 @@ public final class TaskmasterClient {
     }
 
     public SubmitTaskResponse submitTask(String queue, Object payload, List<String> tags) {
-        return submitTask(queue, payload, 0, null, null, tags);
+        return submitTask(queue, payload, 0, null, null, tags, null, null);
+    }
+
+    public SubmitTaskResponse submitTaskWithComplexity(String queue, Object payload, int complexity) {
+        return submitTask(queue, payload, 0, null, null, null, complexity, null);
     }
 
     public Response submitTaskRaw(Map<String, Object> body) {
@@ -187,11 +195,15 @@ public final class TaskmasterClient {
     // ---- worker operations ----
 
     public void registerWorker(String workerId, String queue) {
-        registerWorker(workerId, queue, null);
+        registerWorker(workerId, queue, null, null);
     }
 
     public void registerWorker(String workerId, String queue, List<String> tags) {
-        var body = new RegisterWorkerRequest(workerId, queue, null, tags);
+        registerWorker(workerId, queue, null, tags);
+    }
+
+    public void registerWorker(String workerId, String queue, Integer capacity, List<String> tags) {
+        var body = new RegisterWorkerRequest(workerId, queue, capacity, tags);
         request().body(body)
                 .when().post("/workers/v1/register")
                 .then().statusCode(200);
