@@ -3,6 +3,7 @@
 ### Testing
 - Unit tests for isolated logic; integration tests for complete end-to-end flows
 - Integration tests should be high-level, short, and readable — add helpers/abstractions as needed
+- Make the tests as short-running as possible; for time-based tests always consider the impact on runtime
 - Run unit tests first when validating a change
 - If tests fail, diagnose whether it's a direct consequence of the change or a regression
 - For regressions, explain and stop for input before proceeding

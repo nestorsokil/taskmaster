@@ -93,4 +93,19 @@ public class TaskController {
     public void fail(@PathVariable UUID taskId, @Valid @RequestBody FailTaskRequest request) {
         taskService.fail(taskId, request.workerId(), request.error());
     }
+
+    // replay a single DEAD task back to PENDING.
+    @PostMapping("/{taskId}/replay")
+    public TaskResponse replay(@PathVariable UUID taskId, @Valid @RequestBody(required = false) ReplayTaskRequest request) {
+        if (request == null) request = new ReplayTaskRequest(null, null);
+        var task = taskService.replay(taskId, request.maxAttempts(), request.deadline());
+        return TaskResponse.from(task);
+    }
+
+    // replay all DEAD tasks in a queue.
+    @PostMapping("/replay")
+    public BulkReplayResponse bulkReplay(@Valid @RequestBody BulkReplayRequest request) {
+        int count = taskService.bulkReplay(request.queueName(), request.deadSince(), request.maxAttempts());
+        return new BulkReplayResponse(count);
+    }
 }

@@ -143,6 +143,47 @@ public final class TaskmasterClient {
         return request().body(body).when().post("/tasks/v1/{id}/fail", taskId);
     }
 
+    // ---- replay operations ----
+
+    public TaskResponse replayTask(UUID taskId) {
+        return replayTask(taskId, null, null);
+    }
+
+    public TaskResponse replayTask(UUID taskId, Integer maxAttempts, Instant deadline) {
+        var body = new java.util.HashMap<String, Object>();
+        if (maxAttempts != null) body.put("maxAttempts", maxAttempts);
+        if (deadline != null) body.put("deadline", deadline.toString());
+        return request()
+                .body(body)
+                .when().post("/tasks/v1/{id}/replay", taskId)
+                .then().statusCode(200)
+                .extract().as(TaskResponse.class);
+    }
+
+    public Response replayTaskRaw(UUID taskId, Map<String, Object> body) {
+        return request().body(body != null ? body : Map.of()).when().post("/tasks/v1/{id}/replay", taskId);
+    }
+
+    public BulkReplayResponse bulkReplay(String queueName) {
+        return bulkReplay(queueName, null, null);
+    }
+
+    public BulkReplayResponse bulkReplay(String queueName, Instant deadSince, Integer maxAttempts) {
+        var body = new java.util.HashMap<String, Object>();
+        body.put("queueName", queueName);
+        if (deadSince != null) body.put("deadSince", deadSince.toString());
+        if (maxAttempts != null) body.put("maxAttempts", maxAttempts);
+        return request()
+                .body(body)
+                .when().post("/tasks/v1/replay")
+                .then().statusCode(200)
+                .extract().as(BulkReplayResponse.class);
+    }
+
+    public Response bulkReplayRaw(Map<String, Object> body) {
+        return request().body(body).when().post("/tasks/v1/replay");
+    }
+
     // ---- worker operations ----
 
     public void registerWorker(String workerId, String queue) {

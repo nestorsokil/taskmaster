@@ -101,4 +101,35 @@ public class TaskService {
             log.info("Task requeued for retry: id={}, queue={}, attempt={}/{}", taskId, task.queueName(), task.attempts(), task.maxAttempts());
         }
     }
+
+    /**
+     * Replays a single DEAD task back to PENDING. Resets attempts to 0 and
+     * max_attempts to its original value (or the provided override).
+     * Throws 404 if the task doesn't exist, 409 if the task is not DEAD.
+     */
+    public Task replay(UUID taskId, Integer maxAttemptsOverride, Instant deadlineOverride) {
+        Task task = getTask(taskId);
+        int maxAttempts = maxAttemptsOverride != null ? maxAttemptsOverride : task.maxAttempts();
+        var updated = taskRepository.replayTask(taskId, maxAttempts, deadlineOverride);
+        if (updated.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Task " + taskId + " is not in DEAD status (current: " + task.status() + ")");
+        }
+        Task replayed = updated.getFirst();
+        metrics.tasksReplayed(replayed.queueName(), 1);
+        log.info("Task replayed: id={}, queue={}, maxAttempts={}", taskId, replayed.queueName(), maxAttempts);
+        return replayed;
+    }
+
+    /**
+     * Replays all DEAD tasks in a queue back to PENDING. Optionally filters by age.
+     * Returns the count of tasks replayed.
+     */
+    public int bulkReplay(String queueName, Instant deadSince, Integer maxAttemptsOverride) {
+        int maxAttempts = maxAttemptsOverride != null ? maxAttemptsOverride : 0; // 0 signals "keep original"
+        int count = taskRepository.bulkReplayTasks(queueName, deadSince, maxAttempts);
+        metrics.tasksReplayed(queueName, count);
+        log.info("Bulk replay: queue={}, count={}, deadSince={}", queueName, count, deadSince);
+        return count;
+    }
 }

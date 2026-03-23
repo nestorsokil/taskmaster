@@ -42,6 +42,12 @@ public class TaskmasterMetrics {
         counter("tasks.failed", queue).increment();
     }
 
+    public void tasksReplayed(String queue, int count) {
+        if (count > 0) {
+            counter("tasks.replayed", queue).increment(count);
+        }
+    }
+
     public void taskDeadLettered(String queue, String reason) {
         registry.counter("tasks.dead_lettered", "queue", queue, "reason", reason).increment();
     }
