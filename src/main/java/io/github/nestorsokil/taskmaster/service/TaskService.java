@@ -7,13 +7,12 @@ import io.github.nestorsokil.taskmaster.domain.Task;
 import io.github.nestorsokil.taskmaster.repository.TaskRepository;
 import io.github.nestorsokil.taskmaster.repository.WorkerRepository;
 import io.micrometer.observation.annotation.Observed;
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
-
-import lombok.NonNull;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -61,7 +60,9 @@ public class TaskService {
     }
 
     private void warnIfNoCapableWorker(String queueName, int complexity) {
-        if (complexity <= 1) return; // default complexity always fits default capacity
+        if (complexity <= 1) {
+            return; // default complexity always fits default capacity
+        }
         var activeWorkers = workerRepository.findActiveOnQueue(queueName);
         if (!activeWorkers.isEmpty() && activeWorkers.stream().noneMatch(w -> w.maxConcurrency() >= complexity)) {
             log.warn("Task submitted with complexity={} but no active worker on queue='{}' has sufficient capacity; task may never be claimed",
@@ -72,7 +73,7 @@ public class TaskService {
     public Task getTask(@NonNull UUID taskId) {
         return taskRepository.findById(taskId)
                 .orElseThrow(() -> new ResponseStatusException(
-                    HttpStatus.NOT_FOUND, "Task not found: " + taskId));
+                        HttpStatus.NOT_FOUND, "Task not found: " + taskId));
     }
 
     /**

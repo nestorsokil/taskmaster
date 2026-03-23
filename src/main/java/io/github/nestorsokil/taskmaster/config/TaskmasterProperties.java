@@ -43,8 +43,12 @@ public record TaskmasterProperties(Heartbeat heartbeat, Reaper reaper, Retry ret
             int httpTimeoutSeconds
     ) {
         public Webhook {
-            if (hmacSecret == null) hmacSecret = "";
-            if (httpTimeoutSeconds <= 0) httpTimeoutSeconds = 10;
+            if (hmacSecret == null) {
+                hmacSecret = "";
+            }
+            if (httpTimeoutSeconds <= 0) {
+                httpTimeoutSeconds = 10;
+            }
         }
     }
 }

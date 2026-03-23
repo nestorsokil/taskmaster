@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+staged_java_files="$(git diff --cached --name-only --diff-filter=ACMR -- '*.java')"
+
+if [ -z "$staged_java_files" ]; then
+  exit 0
+fi
+
+mvn -q -DskipTests rewrite:run
+
+printf '%s\n' "$staged_java_files" | while IFS= read -r file; do
+  [ -n "$file" ] && git add -- "$file"
+done

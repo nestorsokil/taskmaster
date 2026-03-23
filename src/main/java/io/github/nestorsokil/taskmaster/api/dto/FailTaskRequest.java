@@ -9,6 +9,6 @@ import jakarta.validation.constraints.NotBlank;
  * @param error    human-readable error message stored as {@code last_error}
  */
 public record FailTaskRequest(
-        @NotBlank String workerId,
-        @NotBlank String error
+@NotBlank String workerId,
+@NotBlank String error
 ) {}

@@ -15,12 +15,12 @@ import java.util.List;
  * @param maxConcurrency max tasks the worker holds concurrently
  */
 public record WorkerResponse(
-        String workerId,
-        String queueName,
-        String status,
-        Instant lastHeartbeat,
-        int maxConcurrency,
-        List<String> tags
+String workerId,
+String queueName,
+String status,
+Instant lastHeartbeat,
+int maxConcurrency,
+List<String> tags
 ) {
     public static WorkerResponse from(Worker worker) {
         return new WorkerResponse(

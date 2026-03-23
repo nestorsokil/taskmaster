@@ -34,8 +34,8 @@ public class CorrelationIdFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request,
-                                    @NonNull HttpServletResponse response,
-                                    @NonNull FilterChain chain) throws ServletException, IOException {
+            @NonNull HttpServletResponse response,
+            @NonNull FilterChain chain) throws ServletException, IOException {
         String correlationId = Optional.ofNullable(request.getHeader(HEADER))
                 .orElse(UUID.randomUUID().toString());
 

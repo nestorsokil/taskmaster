@@ -4,10 +4,11 @@ import io.github.nestorsokil.taskmaster.config.TaskmasterMetrics;
 import io.github.nestorsokil.taskmaster.config.TaskmasterProperties;
 import io.github.nestorsokil.taskmaster.repository.TaskRepository;
 import io.github.nestorsokil.taskmaster.repository.WorkerRepository;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Periodically removes terminal tasks (DONE/DEAD) and dead workers that have

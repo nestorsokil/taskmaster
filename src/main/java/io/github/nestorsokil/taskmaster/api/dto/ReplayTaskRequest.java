@@ -12,6 +12,6 @@ import java.time.Instant;
  * @param deadline   override deadline; useful when the original deadline has already expired
  */
 public record ReplayTaskRequest(
-        @Min(1) Integer maxAttempts,
-        Instant deadline
+@Min(1) Integer maxAttempts,
+Instant deadline
 ) {}

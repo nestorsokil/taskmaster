@@ -2,7 +2,6 @@ package io.github.nestorsokil.taskmaster.service;
 
 import io.github.nestorsokil.taskmaster.config.TaskmasterMetrics;
 import io.github.nestorsokil.taskmaster.domain.Task;
-import io.github.nestorsokil.taskmaster.domain.Worker;
 import io.github.nestorsokil.taskmaster.repository.TaskRepository;
 import io.github.nestorsokil.taskmaster.repository.WorkerRepository;
 import io.micrometer.observation.annotation.Observed;
@@ -51,8 +50,8 @@ public class ClaimService {
     @Transactional
     public List<Task> claim(@NonNull String workerId, @NonNull String queueName, int maxTasks) {
         int capacity = workerRepository
-            .ensureExists(workerId, queueName, DEFAULT_MAX_CONCURRENCY)
-            .maxConcurrency();
+                .ensureExists(workerId, queueName, DEFAULT_MAX_CONCURRENCY)
+                .maxConcurrency();
         int currentLoad = taskRepository.getWorkerLoad(workerId);
         int remainingBudget = capacity - currentLoad;
 
@@ -70,7 +69,9 @@ public class ClaimService {
         var selectedIds = new ArrayList<UUID>(maxTasks);
         int accumulated = 0;
         for (var task : candidates) {
-            if (selectedIds.size() >= maxTasks) break;
+            if (selectedIds.size() >= maxTasks) {
+                break;
+            }
             if (accumulated + task.complexity() <= remainingBudget) {
                 selectedIds.add(task.id());
                 accumulated += task.complexity();

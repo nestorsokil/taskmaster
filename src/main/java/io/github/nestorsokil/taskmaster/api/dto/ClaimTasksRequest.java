@@ -12,7 +12,7 @@ import jakarta.validation.constraints.NotBlank;
  * @param maxTasks  upper bound on tasks returned in a single claim call (1–100)
  */
 public record ClaimTasksRequest(
-        @NotBlank String workerId,
-        @NotBlank String queueName,
-        @Min(1) @Max(100) int maxTasks
+@NotBlank String workerId,
+@NotBlank String queueName,
+@Min(1) @Max(100) int maxTasks
 ) {}

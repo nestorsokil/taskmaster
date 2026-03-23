@@ -14,6 +14,8 @@ public record Tags(List<String> values) {
     public static final Tags EMPTY = new Tags(List.of());
 
     public Tags {
-        if (values == null) values = List.of();
+        if (values == null) {
+            values = List.of();
+        }
     }
 }

@@ -13,7 +13,7 @@ import java.time.Instant;
  * @param maxAttempts override max attempts for all replayed tasks; null preserves original values
  */
 public record BulkReplayRequest(
-        @NotBlank String queueName,
-        Instant deadSince,
-        @Min(1) Integer maxAttempts
+@NotBlank String queueName,
+Instant deadSince,
+@Min(1) Integer maxAttempts
 ) {}

@@ -196,3 +196,22 @@ A pre-provisioned Grafana dashboard ("Taskmaster Overview") is available on star
 - **Spring Data JDBC** (no JPA) — lightweight, explicit SQL with no lazy-loading surprises
 - **Flyway** for schema migrations
 - **Atomic claiming** — a single `SELECT … FOR UPDATE SKIP LOCKED` + `UPDATE` query ensures two workers polling simultaneously never receive the same task
+
+## Code formatting
+
+Taskmaster uses [OpenRewrite](https://docs.openrewrite.org/) to enforce Java formatting rules,
+including braces around single-line control statements.
+
+Format code locally with:
+
+```bash
+mvn rewrite:run
+```
+
+To enable the repo-managed pre-commit hook, point Git at the tracked hook directory:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+The hook runs `mvn rewrite:run` for staged Java files, then re-stages the formatted files before the commit completes.

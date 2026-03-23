@@ -95,11 +95,11 @@ public class ObservabilityService {
      * Returned by {@code GET /queues}.
      */
     public record QueueSummary(
-            String queueName,
-            long pending,
-            long running,
-            long failed,
-            long dead,
-            long activeWorkers
+    String queueName,
+    long pending,
+    long running,
+    long failed,
+    long dead,
+    long activeWorkers
     ) {}
 }

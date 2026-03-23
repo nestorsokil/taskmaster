@@ -9,6 +9,6 @@ import jakarta.validation.constraints.NotBlank;
  * @param result   opaque result string stored on the task (e.g. {@code "sent:msg-id-123"})
  */
 public record CompleteTaskRequest(
-        @NotBlank String workerId,
-        String result
+@NotBlank String workerId,
+String result
 ) {}

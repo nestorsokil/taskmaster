@@ -32,8 +32,14 @@ public record SubmitTaskRequest(
         String callbackUrl
 ) {
     public SubmitTaskRequest {
-        if (maxAttempts == null) maxAttempts = 3;
-        if (tags == null) tags = List.of();
-        if (complexity == null) complexity = 1;
+        if (maxAttempts == null) {
+            maxAttempts = 3;
+        }
+        if (tags == null) {
+            tags = List.of();
+        }
+        if (complexity == null) {
+            complexity = 1;
+        }
     }
 }

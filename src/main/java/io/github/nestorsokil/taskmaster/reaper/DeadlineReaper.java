@@ -3,11 +3,12 @@ package io.github.nestorsokil.taskmaster.reaper;
 import io.github.nestorsokil.taskmaster.config.TaskmasterMetrics;
 import io.github.nestorsokil.taskmaster.repository.TaskRepository;
 import io.github.nestorsokil.taskmaster.service.WebhookService;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Periodically dead-letters tasks whose submission deadline has passed.

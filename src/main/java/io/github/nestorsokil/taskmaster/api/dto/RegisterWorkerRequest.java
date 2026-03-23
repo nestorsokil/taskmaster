@@ -20,7 +20,11 @@ public record RegisterWorkerRequest(
         @Size(max = 16) List<@Size(max = 64) String> tags
 ) {
     public RegisterWorkerRequest {
-        if (maxConcurrency == null) maxConcurrency = 4;
-        if (tags == null) tags = List.of();
+        if (maxConcurrency == null) {
+            maxConcurrency = 4;
+        }
+        if (tags == null) {
+            tags = List.of();
+        }
     }
 }

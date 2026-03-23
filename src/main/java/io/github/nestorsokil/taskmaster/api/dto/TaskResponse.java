@@ -19,17 +19,17 @@ import java.util.UUID;
  * @param finishedAt when the task reached a terminal state; null if still in progress
  */
 public record TaskResponse(
-        UUID taskId,
-        String queueName,
-        String status,
-        String result,
-        String lastError,
-        int attempts,
-        int complexity,
-        List<String> tags,
-        String callbackUrl,
-        Instant createdAt,
-        Instant finishedAt
+UUID taskId,
+String queueName,
+String status,
+String result,
+String lastError,
+int attempts,
+int complexity,
+List<String> tags,
+String callbackUrl,
+Instant createdAt,
+Instant finishedAt
 ) {
     public static TaskResponse from(Task task) {
         return new TaskResponse(

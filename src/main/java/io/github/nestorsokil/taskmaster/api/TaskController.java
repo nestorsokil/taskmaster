@@ -1,14 +1,14 @@
 package io.github.nestorsokil.taskmaster.api;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.nestorsokil.taskmaster.api.dto.*;
 import io.github.nestorsokil.taskmaster.domain.Tags;
 import io.github.nestorsokil.taskmaster.service.ClaimService;
 import io.github.nestorsokil.taskmaster.service.ObservabilityService;
 import io.github.nestorsokil.taskmaster.service.TaskService;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.RequiredArgsConstructor;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -98,7 +98,9 @@ public class TaskController {
     // replay a single DEAD task back to PENDING.
     @PostMapping("/{taskId}/replay")
     public TaskResponse replay(@PathVariable UUID taskId, @Valid @RequestBody(required = false) ReplayTaskRequest request) {
-        if (request == null) request = new ReplayTaskRequest(null, null);
+        if (request == null) {
+            request = new ReplayTaskRequest(null, null);
+        }
         var task = taskService.replay(taskId, request.maxAttempts(), request.deadline());
         return TaskResponse.from(task);
     }

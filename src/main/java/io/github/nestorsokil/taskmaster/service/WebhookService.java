@@ -1,10 +1,10 @@
 package io.github.nestorsokil.taskmaster.service;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.nestorsokil.taskmaster.config.TaskmasterMetrics;
 import io.github.nestorsokil.taskmaster.config.TaskmasterProperties;
 import io.github.nestorsokil.taskmaster.domain.Task;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 

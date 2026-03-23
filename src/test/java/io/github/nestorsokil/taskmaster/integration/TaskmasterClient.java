@@ -1,9 +1,9 @@
 package io.github.nestorsokil.taskmaster.integration;
 
-import io.github.nestorsokil.taskmaster.api.dto.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import io.github.nestorsokil.taskmaster.api.dto.*;
 import io.restassured.common.mapper.TypeRef;
 import io.restassured.config.ObjectMapperConfig;
 import io.restassured.config.RestAssuredConfig;
@@ -103,9 +103,15 @@ public final class TaskmasterClient {
 
     public List<TaskResponse> listTasks(String queue, String status, Integer limit) {
         var spec = request();
-        if (queue != null) spec = spec.queryParam("queue", queue);
-        if (status != null) spec = spec.queryParam("status", status);
-        if (limit != null) spec = spec.queryParam("limit", limit);
+        if (queue != null) {
+            spec = spec.queryParam("queue", queue);
+        }
+        if (status != null) {
+            spec = spec.queryParam("status", status);
+        }
+        if (limit != null) {
+            spec = spec.queryParam("limit", limit);
+        }
         return spec
                 .when().get("/tasks/v1")
                 .then().statusCode(200)
@@ -159,8 +165,12 @@ public final class TaskmasterClient {
 
     public TaskResponse replayTask(UUID taskId, Integer maxAttempts, Instant deadline) {
         var body = new java.util.HashMap<String, Object>();
-        if (maxAttempts != null) body.put("maxAttempts", maxAttempts);
-        if (deadline != null) body.put("deadline", deadline.toString());
+        if (maxAttempts != null) {
+            body.put("maxAttempts", maxAttempts);
+        }
+        if (deadline != null) {
+            body.put("deadline", deadline.toString());
+        }
         return request()
                 .body(body)
                 .when().post("/tasks/v1/{id}/replay", taskId)
@@ -179,8 +189,12 @@ public final class TaskmasterClient {
     public BulkReplayResponse bulkReplay(String queueName, Instant deadSince, Integer maxAttempts) {
         var body = new java.util.HashMap<String, Object>();
         body.put("queueName", queueName);
-        if (deadSince != null) body.put("deadSince", deadSince.toString());
-        if (maxAttempts != null) body.put("maxAttempts", maxAttempts);
+        if (deadSince != null) {
+            body.put("deadSince", deadSince.toString());
+        }
+        if (maxAttempts != null) {
+            body.put("maxAttempts", maxAttempts);
+        }
         return request()
                 .body(body)
                 .when().post("/tasks/v1/replay")

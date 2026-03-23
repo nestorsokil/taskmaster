@@ -6,12 +6,12 @@ import io.github.nestorsokil.taskmaster.service.ObservabilityService.QueueSummar
  * Response body for items in {@code GET /queues/v1}.
  */
 public record QueueSummaryResponse(
-        String queueName,
-        long pending,
-        long running,
-        long failed,
-        long dead,
-        long activeWorkers
+String queueName,
+long pending,
+long running,
+long failed,
+long dead,
+long activeWorkers
 ) {
     public static QueueSummaryResponse from(QueueSummary summary) {
         return new QueueSummaryResponse(
